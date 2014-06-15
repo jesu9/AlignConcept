@@ -4,16 +4,15 @@
 #include "concept_align.h"
 
 using namespace std;
-using aladdin::UvAConcept;
-using aladdin::ActionConcept;
+using aladdin::ClipConcept;
 
 int main(int argc, char **argv) {
     if (argc < 5)   {
         cout<<"Usage: "<<argv[0]<<" actionConceptFile uvaConceptFile uvaInfoFile outputFile [actionDim] [uvaDim]"<<endl;
         return 0;
     }
-    vector<ActionConcept*> actionConcepts;
-    vector<UvAConcept*> uvaConcepts;
+    vector<ClipConcept*> actionConcepts;
+    vector<ClipConcept*> uvaConcepts;
 
     int actionDim = 101 + 51;
     int uvaDim = 1000;
@@ -34,7 +33,7 @@ int main(int argc, char **argv) {
     // load action concept features
     int segmentCounter = 0;
     while (getline(fin, line))  {
-        ActionConcept *ac = new ActionConcept(actionDim, segmentCounter*50+1, segmentCounter*50+100);
+        ClipConcept *ac = new ClipConcept(actionDim, segmentCounter*50+1, segmentCounter*50+100);
         ++segmentCounter;
         stringstream ss;
         float val;
@@ -84,9 +83,18 @@ int main(int argc, char **argv) {
         ss<<line;
         int frameNum;
         ss>>frameNum;
-        UvAConcept *uc = new UvAConcept(uvaDim, frameNum);
+        ClipConcept *uc = new ClipConcept(uvaDim, frameNum, frameNum);
+        // update the end_frame_ for previous clip
+        if (uvaConcepts.size() > 0) {
+            uvaConcepts[uvaConcepts.size()-1]->end_frame_ = frameNum;
+        }
         uc->SetConcept(vec);
         uvaConcepts.push_back(uc);
+    }
+    if (uvaConcepts.size() > 1) {
+        uvaConcepts[uvaConcepts.size()-1]->end_frame_ +=
+            uvaConcepts[uvaConcepts.size()-1]->start_frame_ -
+            uvaConcepts[uvaConcepts.size()-2]->start_frame_;
     }
     fin1.close();
     fin2.close();
@@ -99,11 +107,11 @@ int main(int argc, char **argv) {
         return 0;
     }
     for (int i = 0; i < actionConcepts.size(); ++i) {
+        // since there might be cases where no uva concept falls within the range
+        // we ignore those cases and only save those with both action and uva concepts.
+        // as a reuslt, we need to store the starting frame number
         if (actionConcepts[i]->Align(uvaConcepts))  {
-            fout<<actionConcepts[i]->ToString()<<endl;
-        }   else    {
-            cout<<"Alignment error, break"<<endl;
-            break;
+            fout<<actionConcepts[i]->start_frame_<<" "<<actionConcepts[i]->ToString()<<endl;
         }
     }
     fout.close();

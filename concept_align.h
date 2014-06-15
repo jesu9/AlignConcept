@@ -17,21 +17,22 @@ public:
     std::vector<double> concept_vec_;
 };
 
-class UvAConcept
+class FrameConcept
     : public BaseConcept    {
 public:
-    UvAConcept(int dim, int frame): BaseConcept(dim), frame_(frame){}
+    FrameConcept(int dim, int frame): BaseConcept(dim), frame_(frame){}
 public:
     int frame_;
 };
 
-class ActionConcept
+class ClipConcept
     : public BaseConcept    {
 public:
-    ActionConcept(int dim, int start_frame, int end_frame):
+    ClipConcept(int dim, int start_frame, int end_frame):
         BaseConcept(dim), start_frame_(start_frame),
         end_frame_(end_frame), aligned_(false){}
-    bool Align(const std::vector<UvAConcept*>& uva);
+    bool Align(const std::vector<FrameConcept*>& fc);
+    bool Align(const std::vector<ClipConcept*>& cc);
 public:
     int start_frame_;
     int end_frame_;
